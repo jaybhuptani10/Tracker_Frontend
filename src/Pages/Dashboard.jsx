@@ -193,8 +193,8 @@ const Dashboard = () => {
 
         {/* Logo */}
         <div
-          className={`flex items-center gap-3 mb-10 transition-all ${
-            !isSidebarOpen && "justify-center"
+          className={`flex items-center gap-3 transition-all duration-300 ${
+            !isSidebarOpen ? "mb-6 justify-center w-full" : "mb-8 pl-2"
           }`}
         >
           <div className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
@@ -202,7 +202,7 @@ const Dashboard = () => {
           </div>
           <div
             className={`overflow-hidden transition-all duration-300 ${
-              isSidebarOpen ? "w-auto opacity-100" : "w-0 opacity-0"
+              isSidebarOpen ? "w-auto opacity-100" : "w-0 opacity-0 hidden"
             }`}
           >
             <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent whitespace-nowrap">
@@ -213,24 +213,24 @@ const Dashboard = () => {
 
         {/* User Info */}
         <div
-          className={`mb-6 p-3 bg-slate-800/60 rounded-xl border border-white/5 transition-all w-full overflow-hidden ${
+          className={`transition-all duration-300 w-full overflow-hidden ${
             !isSidebarOpen
-              ? "bg-transparent border-transparent p-0 flex justify-center"
-              : ""
+              ? "bg-transparent mb-4 flex justify-center"
+              : "bg-slate-800/60 rounded-xl border border-white/5 p-3 mb-6"
           }`}
         >
           <div
             className={`flex items-center gap-3 ${
-              !isSidebarOpen && "justify-center"
+              !isSidebarOpen && "justify-center w-full"
             }`}
           >
-            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center shrink-0">
-              <User className="w-4 h-4 text-slate-400" />
+            <div className="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center shrink-0 shadow-lg shadow-black/20">
+              <User className="w-5 h-5 text-slate-400" />
             </div>
 
             <div
               className={`overflow-hidden transition-all duration-300 ${
-                isSidebarOpen ? "w-auto opacity-100" : "w-0 opacity-0"
+                isSidebarOpen ? "w-auto opacity-100" : "w-0 opacity-0 hidden"
               }`}
             >
               <p className="text-sm font-semibold text-white truncate whitespace-nowrap">
@@ -243,19 +243,21 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Gamification Stats */}
+        {/* Gamification Stats - Hidden when collapsed */}
         <div
-          className={`mb-8 flex gap-2 transition-all duration-300 ${
-            isSidebarOpen ? "opacity-100" : "opacity-0 hidden"
+          className={`flex gap-2 transition-all duration-300 ${
+            isSidebarOpen
+              ? "opacity-100 mb-8 h-auto"
+              : "opacity-0 h-0 overflow-hidden mb-0"
           }`}
         >
-          <div className="flex-1 bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-2 text-center">
+          <div className="flex-1 bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-2 text-center whitespace-nowrap">
             <div className="flex items-center justify-center gap-1 text-indigo-400 text-xs font-bold uppercase mb-1">
               <Zap className="w-3 h-3" /> XP
             </div>
             <span className="text-white font-bold">{user?.xp || 0}</span>
           </div>
-          <div className="flex-1 bg-orange-500/10 border border-orange-500/20 rounded-xl p-2 text-center">
+          <div className="flex-1 bg-orange-500/10 border border-orange-500/20 rounded-xl p-2 text-center whitespace-nowrap">
             <div className="flex items-center justify-center gap-1 text-orange-400 text-xs font-bold uppercase mb-1">
               <div className="w-3 h-3">🔥</div> Streak
             </div>
@@ -264,48 +266,79 @@ const Dashboard = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-2 w-full">
-          <div
-            className={`flex items-center gap-3 px-3 py-3 rounded-xl bg-indigo-500/10 text-indigo-400 font-medium transition-all cursor-pointer hover:bg-indigo-500/20 ${
-              !isSidebarOpen ? "justify-center px-0" : ""
+        <nav
+          className={`flex-1 space-y-2 w-full ${
+            !isSidebarOpen && "flex flex-col items-center"
+          }`}
+        >
+          {/* Dashboard Link - Active */}
+          <button
+            className={`flex items-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 transition-all hover:bg-indigo-700 ${
+              !isSidebarOpen
+                ? "w-10 h-10 justify-center p-0"
+                : "w-full gap-3 p-3"
             }`}
             title="Dashboard"
           >
             <LayoutDashboard className="w-5 h-5 shrink-0" />
-            {isSidebarOpen && (
-              <span className="animate-fade-in">Dashboard</span>
-            )}
-          </div>
+            <span
+              className={`transition-all duration-300 ${
+                isSidebarOpen
+                  ? "opacity-100 w-auto"
+                  : "opacity-0 w-0 overflow-hidden hidden"
+              }`}
+            >
+              Dashboard
+            </span>
+          </button>
         </nav>
 
-        {/* Bottom Actions */}
-        <div className="mt-auto space-y-3 w-full">
-          {!partner && (
-            <button
-              onClick={() => setShowLinkModal(true)}
-              className={`w-full flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-3 rounded-xl font-semibold shadow-lg shadow-indigo-500/30 transition-all duration-300 ${
-                !isSidebarOpen
-                  ? "justify-center bg-none bg-indigo-600"
-                  : "justify-center"
+        {/* Footer Actions */}
+        <div
+          className={`space-y-2 w-full mt-auto ${
+            !isSidebarOpen && "flex flex-col items-center gap-2 space-y-0"
+          }`}
+        >
+          <button
+            onClick={() => setShowLinkModal(true)}
+            className={`flex items-center gap-3 p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white transition-all border border-transparent hover:border-white/5 ${
+              !isSidebarOpen
+                ? "w-10 h-10 justify-center p-0 bg-indigo-500/10 text-indigo-400"
+                : "w-full"
+            }`}
+            title="Link Partner"
+          >
+            <LinkIcon className="w-5 h-5 shrink-0" />
+            <span
+              className={`transition-all duration-300 ${
+                isSidebarOpen
+                  ? "opacity-100 w-auto"
+                  : "opacity-0 w-0 overflow-hidden"
               }`}
-              title="Link Partner"
             >
-              <LinkIcon className="w-4 h-4 shrink-0" />
-              {isSidebarOpen && (
-                <span className="animate-fade-in">Link Partner</span>
-              )}
-            </button>
-          )}
+              Link Partner
+            </span>
+          </button>
 
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 p-3 rounded-xl font-medium border border-red-500/20 transition-all ${
-              !isSidebarOpen ? "justify-center" : "justify-center"
+            className={`flex items-center gap-3 p-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20 ${
+              !isSidebarOpen
+                ? "w-10 h-10 justify-center p-0 bg-red-500/10"
+                : "w-full bg-red-500/5"
             }`}
-            title="Sign Out"
+            title="Logout"
           >
-            <LogOut className="w-4 h-4 shrink-0" />
-            {isSidebarOpen && <span className="animate-fade-in">Sign Out</span>}
+            <LogOut className="w-5 h-5 shrink-0" />
+            <span
+              className={`transition-all duration-300 ${
+                isSidebarOpen
+                  ? "opacity-100 w-auto"
+                  : "opacity-0 w-0 overflow-hidden"
+              }`}
+            >
+              Logout
+            </span>
           </button>
         </div>
       </aside>
@@ -516,7 +549,7 @@ const Dashboard = () => {
               <input
                 type="email"
                 value={partnerEmail}
-                onChange={(e) => setPartnerEmail(e.target.value)}
+                onChange={(e) => setPartnerEmail(e.target.value.toLowerCase())}
                 placeholder="partner@example.com"
                 required
                 className="w-full px-4 py-3 rounded-xl border border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 bg-slate-900/50 text-white placeholder-slate-500 transition-all duration-300 outline-none mb-4"

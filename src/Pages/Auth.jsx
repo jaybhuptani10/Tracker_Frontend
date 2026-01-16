@@ -47,7 +47,11 @@ const Auth = () => {
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    let value = e.target.value;
+    if (e.target.name === "email") {
+      value = value.toLowerCase();
+    }
+    setFormData({ ...formData, [e.target.name]: value });
   };
 
   return (
