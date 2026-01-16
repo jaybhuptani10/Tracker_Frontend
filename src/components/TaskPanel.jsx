@@ -145,7 +145,9 @@ const TaskCard = ({ task, onUpdate, onDelete, isPartner = false }) => {
         <button
           onClick={() => onDelete(task._id)}
           className={`p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/20 transition-all duration-200 ${
-            isHovered ? "opacity-100" : "opacity-0"
+            isHovered
+              ? "opacity-100"
+              : "opacity-100 md:opacity-0 md:group-hover:opacity-100"
           }`}
         >
           <Trash2 className="w-3.5 h-3.5" />
@@ -194,9 +196,23 @@ const TaskPanel = ({
   const completedCount = tasks.filter((t) => t.isCompleted).length;
   const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
 
+  const getCategoryIcon = (category) => {
+    switch (category) {
+      case "Work":
+        return <Briefcase className="w-4 h-4 text-blue-400" />;
+      case "Personal":
+        return <Home className="w-4 h-4 text-purple-400" />;
+      case "Workout":
+        return <Dumbbell className="w-4 h-4 text-orange-400" />;
+      case "Study":
+        return <BookOpen className="w-4 h-4 text-green-400" />;
+      default:
+        return <Layers className="w-4 h-4 text-slate-400" />;
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
-      {/* Header & Progress (Same as before) */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
           <div>
@@ -231,43 +247,46 @@ const TaskPanel = ({
       {showAddTask && !isPartner && (
         <form
           onSubmit={handleAddTask}
-          className="flex gap-2 mb-3 animate-slide-up"
+          className="flex flex-col md:flex-row gap-2 mb-3 animate-slide-up"
         >
-          {/* ... Input fields same as before ... */}
-          <input
-            type="text"
-            value={newTask.content}
-            onChange={(e) =>
-              setNewTask({ ...newTask, content: e.target.value })
-            }
-            placeholder="New task..."
-            className="flex-1 px-3 py-2 text-sm rounded-lg border border-white/10 focus:border-indigo-500/50 bg-slate-900/50 text-white placeholder-slate-500 outline-none transition-all"
-            autoFocus
-          />
-          <div className="relative group">
-            <select
-              value={newTask.category}
+          <div className="flex-1 flex gap-2">
+            <input
+              type="text"
+              value={newTask.content}
               onChange={(e) =>
-                setNewTask({ ...newTask, category: e.target.value })
+                setNewTask({ ...newTask, content: e.target.value })
               }
-              className="w-10 h-full opacity-0 absolute inset-0 cursor-pointer z-10"
-            >
-              <option value="Work">Work</option>
-              <option value="Personal">Personal</option>
-              <option value="Workout">Workout</option>
-              <option value="Study">Study</option>
-              <option value="Other">Other</option>
-            </select>
-            <div className="w-10 h-full flex items-center justify-center rounded-lg border border-white/10 bg-slate-900/50 text-slate-400 hover:text-white transition-colors">
-              <Layers className="w-4 h-4" />
-            </div>
+              placeholder="New task..."
+              className="flex-1 px-3 py-2 text-sm rounded-lg border border-white/10 focus:border-indigo-500/50 bg-slate-900/50 text-white placeholder-slate-500 outline-none transition-all w-full"
+              autoFocus
+            />
           </div>
-          <button
-            type="submit"
-            className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors"
-          >
-            Add
-          </button>
+          <div className="flex gap-2">
+            <div className="relative group flex-1 md:flex-none">
+              <select
+                value={newTask.category}
+                onChange={(e) =>
+                  setNewTask({ ...newTask, category: e.target.value })
+                }
+                className="w-full md:w-10 h-10 opacity-0 absolute inset-0 cursor-pointer z-10"
+              >
+                <option value="Work">Work</option>
+                <option value="Personal">Personal</option>
+                <option value="Workout">Workout</option>
+                <option value="Study">Study</option>
+                <option value="Other">Other</option>
+              </select>
+              <div className="w-full md:w-10 h-10 flex items-center justify-center rounded-lg border border-white/10 bg-slate-900/50 hover:bg-slate-800 transition-colors pointer-events-none">
+                {getCategoryIcon(newTask.category)}
+              </div>
+            </div>
+            <button
+              type="submit"
+              className="flex-1 md:flex-none px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors"
+            >
+              Add
+            </button>
+          </div>
         </form>
       )}
 

@@ -60,11 +60,13 @@ const DateSlider = ({ selectedDate, onDateSelect }) => {
     if (scrollRef.current) {
       const selectedElement = document.getElementById(`date-${selectedDate}`);
       if (selectedElement) {
-        selectedElement.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "center",
-        });
+        setTimeout(() => {
+          selectedElement.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "center",
+          });
+        }, 100);
       }
     }
   }, [selectedDate]);
