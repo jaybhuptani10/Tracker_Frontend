@@ -5,7 +5,6 @@ import {
   LogOut,
   Link as LinkIcon,
   Users,
-  Zap,
   User,
   Heart,
   X,
@@ -347,12 +346,6 @@ const Dashboard = () => {
               : "opacity-0 h-0 overflow-hidden mb-0"
           }`}
         >
-          <div className="flex-1 bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-2 text-center whitespace-nowrap">
-            <div className="flex items-center justify-center gap-1 text-indigo-400 text-xs font-bold uppercase mb-1">
-              <Zap className="w-3 h-3" /> XP
-            </div>
-            <span className="text-white font-bold">{user?.xp || 0}</span>
-          </div>
           <div className="flex-1 bg-orange-500/10 border border-orange-500/20 rounded-xl p-2 text-center whitespace-nowrap">
             <div className="flex items-center justify-center gap-1 text-orange-400 text-xs font-bold uppercase mb-1">
               <div className="w-3 h-3">🔥</div> Streak
@@ -554,6 +547,11 @@ const Dashboard = () => {
                                   className="w-2 h-2 rounded-full bg-green-500 animate-pulse"
                                   title="Online"
                                 />
+                              )}
+                              {partner?.streak > 0 && (
+                                <span className="flex items-center gap-1 text-xs bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 rounded-full text-orange-400">
+                                  🔥 {partner.streak}
+                                </span>
                               )}
                             </h3>
                             <p className="text-xs text-slate-400 truncate h-4">
