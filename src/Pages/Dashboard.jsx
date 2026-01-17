@@ -20,6 +20,7 @@ import { setTasks } from "../redux/slices/taskSlice";
 import { logout, setUser } from "../redux/slices/authSlice";
 import TaskPanel from "../components/TaskPanel";
 import DateSlider from "../components/DateSlider";
+import CommonGoals from "../components/CommonGoals";
 import SenderNudgeAnimation from "../components/SenderNudgeAnimation";
 import ReceiverNudgeAnimation from "../components/ReceiverNudgeAnimation";
 import toast, { Toaster } from "react-hot-toast";
@@ -29,7 +30,9 @@ const Dashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
-  const { myTasks, partnerTasks, partner } = useSelector((state) => state.task);
+  const { myTasks, partnerTasks, partner, sharedTasks } = useSelector(
+    (state) => state.task,
+  );
   const [loading, setLoading] = useState(true);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [partnerEmail, setPartnerEmail] = useState("");
@@ -129,6 +132,7 @@ const Dashboard = () => {
           myTasks: response.data.data.myTasks,
           partnerTasks: response.data.data.partnerTasks,
           partner: response.data.data.partner,
+          sharedTasks: response.data.data.sharedTasks,
         }),
       );
 
@@ -458,7 +462,7 @@ const Dashboard = () => {
             {/* Header Section in Main Content (Date & Greeting) */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
               <div>
-                <h2 className="text-2xl font-bold text-white mb-1">
+                <h2 className="text-xl md:text-2xl font-bold text-white mb-1">
                   Today's Overview
                 </h2>
                 <p className="text-slate-400 text-sm flex items-center gap-2">
@@ -487,18 +491,18 @@ const Dashboard = () => {
                 isPartnerViewActive
                   ? "lg:grid-cols-2"
                   : "lg:grid-cols-[3fr_1fr]"
-              } gap-6 h-full transition-all duration-500`}
+              } gap-4 md:gap-6 h-full transition-all duration-500`}
             >
               {/* Your Tasks */}
-              <div className="flex flex-col h-full min-h-[500px] animate-slide-up">
+              <div className="flex flex-col h-full min-h-[400px] md:min-h-[500px] animate-slide-up">
                 <div className="flex-1 bg-slate-800/40 backdrop-blur-md rounded-3xl border border-white/5 p-1 flex flex-col">
                   <div className="flex-1 bg-slate-900/50 rounded-[22px] p-5 flex flex-col">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
-                        <User className="w-5 h-5 text-indigo-400" />
+                    <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
+                        <User className="w-4 h-4 md:w-5 md:h-5 text-indigo-400" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-white">
+                        <h3 className="text-base md:text-lg font-bold text-white">
                           Your Tasks
                         </h3>
                         <p className="text-xs text-slate-400">Personal focus</p>
@@ -526,30 +530,32 @@ const Dashboard = () => {
                 {partner || partnerTasks.length > 0 ? (
                   <div className="flex-1 bg-slate-800/40 backdrop-blur-md rounded-3xl border border-white/5 p-1 flex flex-col">
                     <div className="flex-1 bg-slate-900/50 rounded-[22px] p-5 flex flex-col">
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-xl bg-pink-500/20 flex items-center justify-center border border-pink-500/30 shrink-0">
-                            <Heart className="w-5 h-5 text-pink-400" />
+                      <div className="flex items-center justify-between mb-4 md:mb-6">
+                        <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-pink-500/20 flex items-center justify-center border border-pink-500/30 shrink-0">
+                            <Heart className="w-4 h-4 md:w-5 md:h-5 text-pink-400" />
                           </div>
                           <div
-                            className={`transition-all duration-300 ${
+                            className={`transition-all duration-300 min-w-0 flex-1 ${
                               !isPartnerViewActive
                                 ? "opacity-0 w-0 hidden"
                                 : "opacity-100"
                             }`}
                           >
-                            <h3 className="text-lg font-bold text-white truncate flex items-center gap-2">
-                              {partner
-                                ? `${partner.name}'s Tasks`
-                                : "Partner's Tasks"}
+                            <h3 className="text-base md:text-lg font-bold text-white truncate flex items-center gap-1.5 md:gap-2">
+                              <span className="truncate">
+                                {partner
+                                  ? `${partner.name}'s Tasks`
+                                  : "Partner's Tasks"}
+                              </span>
                               {isPartnerOnline && (
                                 <span
-                                  className="w-2 h-2 rounded-full bg-green-500 animate-pulse"
+                                  className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0"
                                   title="Online"
                                 />
                               )}
                               {partner?.streak > 0 && (
-                                <span className="flex items-center gap-1 text-xs bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 rounded-full text-orange-400">
+                                <span className="flex items-center gap-0.5 md:gap-1 text-[10px] md:text-xs bg-orange-500/20 border border-orange-500/30 px-1.5 md:px-2 py-0.5 rounded-full text-orange-400 shrink-0">
                                   🔥 {partner.streak}
                                 </span>
                               )}
@@ -672,6 +678,21 @@ const Dashboard = () => {
                 )}
               </div>
             </div>
+
+            {/* Common Goals Section - Full Width */}
+            {partner && sharedTasks && sharedTasks.length >= 0 && (
+              <div
+                className="mt-8 animate-slide-up"
+                style={{ animationDelay: "0.2s" }}
+              >
+                <CommonGoals
+                  sharedTasks={sharedTasks}
+                  onUpdate={fetchDashboard}
+                  selectedDate={selectedDate}
+                  partner={partner}
+                />
+              </div>
+            )}
           </div>
         </div>
       </main>

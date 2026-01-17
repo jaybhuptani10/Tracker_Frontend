@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   myTasks: [],
   partnerTasks: [],
+  sharedTasks: [],
   partner: null,
   loading: false,
   error: null,
@@ -15,6 +16,7 @@ const taskSlice = createSlice({
     setTasks: (state, action) => {
       state.myTasks = action.payload.myTasks || [];
       state.partnerTasks = action.payload.partnerTasks || [];
+      state.sharedTasks = action.payload.sharedTasks || [];
       state.partner = action.payload.partner || null;
     },
     addTask: (state, action) => {

@@ -11,6 +11,9 @@ import {
   GripVertical,
   MessageCircle,
   X,
+  ListTodo,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { taskAPI } from "../utils/api";
 import toast from "react-hot-toast";
@@ -30,12 +33,36 @@ const TaskCard = ({
   const [commentText, setCommentText] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(task.content);
+  const [showSubtasks, setShowSubtasks] = useState(false);
+  const [subtaskInput, setSubtaskInput] = useState("");
 
   // Sync local state with prop when it changes
   useEffect(() => {
     setLocalCompleted(task.isCompleted);
     setEditedContent(task.content);
   }, [task.isCompleted, task.content]);
+
+  const handleAddSubtask = async (e) => {
+    e.preventDefault();
+    if (!subtaskInput.trim()) return;
+    try {
+      await taskAPI.addSubtask(task._id, subtaskInput);
+      setSubtaskInput("");
+      onUpdate();
+      toast.success("Subtask added");
+    } catch {
+      toast.error("Failed to add subtask");
+    }
+  };
+
+  const handleToggleSubtask = async (subtaskId) => {
+    try {
+      await taskAPI.toggleSubtask(task._id, subtaskId);
+      onUpdate();
+    } catch {
+      toast.error("Failed update");
+    }
+  };
 
   const handleToggle = async () => {
     if (isPartner || isUpdating) return;
@@ -146,10 +173,10 @@ const TaskCard = ({
         localCompleted ? "opacity-60 saturate-50" : "opacity-100"
       }`}
     >
-      <div className="flex items-center gap-3 p-3">
+      <div className="flex items-center gap-1.5 md:gap-3 p-2 md:p-3">
         {/* Drag Handle (Only for incomplete tasks) */}
         {!localCompleted && !isPartner && (
-          <div className="cursor-grab active:cursor-grabbing text-white/50 hover:text-white/80">
+          <div className="cursor-grab active:cursor-grabbing text-white/50 hover:text-white/80 p-0.5 md:p-1 hidden md:block">
             <GripVertical className="w-4 h-4" />
           </div>
         )}
@@ -159,14 +186,14 @@ const TaskCard = ({
           <button
             onClick={handleToggle}
             disabled={isUpdating}
-            className={`flex-shrink-0 w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center shadow-sm ${
+            className={`flex-shrink-0 w-4 h-4 md:w-5 md:h-5 rounded border transition-all duration-200 flex items-center justify-center shadow-sm ${
               localCompleted
                 ? "bg-white border-transparent"
                 : `bg-transparent ${config.checkbox}`
             }`}
           >
             {localCompleted && (
-              <Check className="w-3.5 h-3.5 text-slate-900 font-bold" />
+              <Check className="w-3 h-3 md:w-3.5 md:h-3.5 text-slate-900 font-bold" />
             )}
           </button>
         )}
@@ -204,7 +231,7 @@ const TaskCard = ({
           ) : (
             <div className="flex items-start gap-2 w-full">
               <span
-                className={`text-sm font-medium text-white break-words flex-1 ${
+                className={`text-xs md:text-sm font-medium text-white break-words flex-1 leading-tight md:leading-normal ${
                   localCompleted ? "line-through opacity-80" : ""
                 }`}
                 onDoubleClick={() => !isPartner && setIsEditing(true)}
@@ -222,6 +249,24 @@ const TaskCard = ({
           )}
         </div>
 
+        {/* Subtask Toggle */}
+        <button
+          onClick={() => setShowSubtasks(!showSubtasks)}
+          className={`p-1.5 rounded-md hover:bg-white/20 transition-all ${
+            task.subtasks?.length > 0 ? "text-white" : "text-white/70"
+          }`}
+          title="Subtasks"
+        >
+          <div className="relative">
+            <ListTodo className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            {task.subtasks?.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[8px] font-bold px-1 rounded-full">
+                {task.subtasks.filter((t) => !t.isCompleted).length}
+              </span>
+            )}
+          </div>
+        </button>
+
         {/* Comment Toggle */}
         <button
           onClick={() => setShowComments(!showComments)}
@@ -231,7 +276,7 @@ const TaskCard = ({
           title="Comments"
         >
           <div className="relative">
-            <MessageCircle className="w-3.5 h-3.5" />
+            <MessageCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
             {task.comments?.length > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold px-1 rounded-full">
                 {task.comments.length}
@@ -245,7 +290,7 @@ const TaskCard = ({
           className={`p-1.5 rounded-md ${config.iconBg} backdrop-blur-sm`}
           title={task.category}
         >
-          <Icon className="w-3.5 h-3.5" />
+          <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
         </div>
 
         {/* Delete Button */}
@@ -258,10 +303,64 @@ const TaskCard = ({
                 : "opacity-100 md:opacity-0 md:group-hover:opacity-100"
             }`}
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
           </button>
         )}
       </div>
+
+      {/* Subtasks Section */}
+      {showSubtasks && (
+        <div className="px-3 pb-3 pt-2 border-t border-white/10 bg-black/10 animate-slide-up">
+          <div className="space-y-1 mb-2">
+            {task.subtasks?.map((subtask) => (
+              <div
+                key={subtask._id}
+                className="flex items-center gap-2 text-sm group/sub"
+              >
+                {!isPartner && (
+                  <button
+                    onClick={() => handleToggleSubtask(subtask._id)}
+                    className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
+                      subtask.isCompleted
+                        ? "bg-white/80 border-transparent"
+                        : "border-white/30 hover:bg-white/10"
+                    }`}
+                  >
+                    {subtask.isCompleted && (
+                      <Check className="w-2.5 h-2.5 text-black" />
+                    )}
+                  </button>
+                )}
+                <span
+                  className={`flex-1 text-white/90 break-all ${
+                    subtask.isCompleted ? "line-through opacity-50" : ""
+                  }`}
+                >
+                  {subtask.content}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {!isPartner && (
+            <form onSubmit={handleAddSubtask} className="flex gap-2 mt-2">
+              <input
+                type="text"
+                value={subtaskInput}
+                onChange={(e) => setSubtaskInput(e.target.value)}
+                placeholder="Add subtask..."
+                className="flex-1 px-2 py-1 text-xs bg-white/5 border border-white/10 rounded text-white placeholder-white/30 focus:border-white/30 outline-none"
+              />
+              <button
+                type="submit"
+                className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-xs text-white transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </form>
+          )}
+        </div>
+      )}
 
       {/* Comment Section */}
       {showComments && (
@@ -364,17 +463,19 @@ const TaskPanel = ({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="mb-4">
+      <div className="mb-3 md:mb-4">
         <div className="flex items-center justify-between mb-2">
-          <div>
+          <div className="flex-1 min-w-0">
             {title && (
-              <h2 className="text-lg font-bold text-white mb-0.5">{title}</h2>
+              <h2 className="text-base md:text-lg font-bold text-white mb-0.5 truncate">
+                {title}
+              </h2>
             )}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-400">
+            <div className="flex items-center gap-1.5 md:gap-2">
+              <span className="text-[10px] md:text-xs font-medium text-slate-400">
                 {completedCount}/{tasks.length} done
               </span>
-              <div className="w-24 h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
+              <div className="w-16 md:w-24 h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-indigo-500 to-pink-500 rounded-full transition-all duration-500"
                   style={{ width: `${progress}%` }}

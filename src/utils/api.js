@@ -46,6 +46,9 @@ export const taskAPI = {
     api.patch(`/tasks/${id}/status`, { isCompleted }),
   deleteTask: (id) => api.delete(`/tasks/${id}`),
   addComment: (id, text) => api.post(`/tasks/${id}/comment`, { text }),
+  addSubtask: (id, content) => api.post(`/tasks/${id}/subtasks`, { content }),
+  toggleSubtask: (id, subtaskId) =>
+    api.patch(`/tasks/${id}/subtasks/${subtaskId}`),
 };
 
 export default api;
