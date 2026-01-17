@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Users, Plus, Check, Trash2, X } from "lucide-react";
 import { taskAPI } from "../utils/api";
 import toast from "react-hot-toast";
+import confetti from "canvas-confetti";
 
 const CommonGoals = ({ sharedTasks, onUpdate, selectedDate, partner }) => {
   const [showAddTask, setShowAddTask] = useState(false);
@@ -31,7 +32,59 @@ const CommonGoals = ({ sharedTasks, onUpdate, selectedDate, partner }) => {
     try {
       await taskAPI.updateTaskStatus(taskId, !currentStatus);
       onUpdate();
-      toast.success(!currentStatus ? "Goal completed! 🎉" : "Goal reopened!");
+
+      if (!currentStatus) {
+        // Trigger celebration for completing a shared goal!
+        const duration = 2500;
+        const animationEnd = Date.now() + duration;
+        const defaults = {
+          startVelocity: 35,
+          spread: 360,
+          ticks: 70,
+          zIndex: 9999,
+        };
+
+        function randomInRange(min, max) {
+          return Math.random() * (max - min) + min;
+        }
+
+        const interval = setInterval(function () {
+          const timeLeft = animationEnd - Date.now();
+
+          if (timeLeft <= 0) {
+            return clearInterval(interval);
+          }
+
+          const particleCount = 60 * (timeLeft / duration);
+
+          // More intense celebration for shared goals!
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+            colors: ["#10b981", "#14b8a6", "#06b6d4", "#3b82f6", "#8b5cf6"],
+          });
+
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+            colors: ["#10b981", "#14b8a6", "#06b6d4", "#3b82f6", "#8b5cf6"],
+          });
+        }, 250);
+
+        toast.success("Common goal completed! 🎉", {
+          icon: "🎊",
+          duration: 3000,
+          style: {
+            borderRadius: "10px",
+            background: "#059669",
+            color: "#fff",
+          },
+        });
+      } else {
+        toast.success("Goal reopened!");
+      }
     } catch {
       toast.error("Failed to update goal");
     }

@@ -18,6 +18,7 @@ import {
 import { taskAPI } from "../utils/api";
 import toast from "react-hot-toast";
 import { Reorder } from "framer-motion";
+import confetti from "canvas-confetti";
 
 const TaskCard = ({
   task,
@@ -75,7 +76,59 @@ const TaskCard = ({
     try {
       await taskAPI.updateTaskStatus(task._id, newStatus);
       onUpdate();
-      toast.success(newStatus ? "Task completed! 🎉" : "Task reopened!");
+
+      if (newStatus) {
+        // Trigger confetti celebration!
+        const duration = 2000;
+        const animationEnd = Date.now() + duration;
+        const defaults = {
+          startVelocity: 30,
+          spread: 360,
+          ticks: 60,
+          zIndex: 9999,
+        };
+
+        function randomInRange(min, max) {
+          return Math.random() * (max - min) + min;
+        }
+
+        const interval = setInterval(function () {
+          const timeLeft = animationEnd - Date.now();
+
+          if (timeLeft <= 0) {
+            return clearInterval(interval);
+          }
+
+          const particleCount = 50 * (timeLeft / duration);
+
+          // Confetti from left
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+            colors: ["#818cf8", "#c084fc", "#f472b6", "#fb923c", "#34d399"],
+          });
+
+          // Confetti from right
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+            colors: ["#818cf8", "#c084fc", "#f472b6", "#fb923c", "#34d399"],
+          });
+        }, 250);
+
+        toast.success("Task completed! 🎉", {
+          icon: "🎊",
+          style: {
+            borderRadius: "10px",
+            background: "#333",
+            color: "#fff",
+          },
+        });
+      } else {
+        toast.success("Task reopened!");
+      }
     } catch {
       // Revert on error
       setLocalCompleted(!newStatus);
@@ -167,10 +220,12 @@ const TaskCard = ({
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`group relative flex flex-col rounded-lg border shadow-lg transition-all duration-200 hover:shadow-xl ${
+      className={`group relative flex flex-col rounded-lg border shadow-lg transition-all duration-300 hover:shadow-xl ${
         config.cardBg
       } ${config.border} ${
-        localCompleted ? "opacity-60 saturate-50" : "opacity-100"
+        localCompleted
+          ? "opacity-60 saturate-50 scale-[0.98]"
+          : "opacity-100 scale-100"
       }`}
     >
       <div className="flex items-center gap-1.5 md:gap-3 p-2 md:p-3">

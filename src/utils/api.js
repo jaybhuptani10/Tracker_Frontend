@@ -51,4 +51,12 @@ export const taskAPI = {
     api.patch(`/tasks/${id}/subtasks/${subtaskId}`),
 };
 
+// Work Session APIs
+export const workSessionAPI = {
+  getSession: (date) => api.get("/work-session", { params: { date } }),
+  startTimer: (date) => api.post("/work-session/start", { date }),
+  pauseTimer: (date) => api.post("/work-session/pause", { date }),
+  resetTimer: (date) => api.post("/work-session/reset", { date }),
+};
+
 export default api;

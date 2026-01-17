@@ -21,6 +21,7 @@ import { logout, setUser } from "../redux/slices/authSlice";
 import TaskPanel from "../components/TaskPanel";
 import DateSlider from "../components/DateSlider";
 import CommonGoals from "../components/CommonGoals";
+import WorkTimer from "../components/WorkTimer";
 import SenderNudgeAnimation from "../components/SenderNudgeAnimation";
 import ReceiverNudgeAnimation from "../components/ReceiverNudgeAnimation";
 import toast, { Toaster } from "react-hot-toast";
@@ -475,6 +476,9 @@ const Dashboard = () => {
                   })}
                 </p>
               </div>
+
+              {/* Work Timer - Top Right Horizontal */}
+              <WorkTimer selectedDate={selectedDate} />
             </div>
 
             {/* Date Slider */}
