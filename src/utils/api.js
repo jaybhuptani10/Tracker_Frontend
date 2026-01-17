@@ -41,6 +41,7 @@ export const authAPI = {
 export const taskAPI = {
   getDashboard: (date) => api.get("/tasks/dashboard", { params: { date } }),
   createTask: (data) => api.post("/tasks", data),
+  updateTask: (id, data) => api.patch(`/tasks/${id}`, data),
   updateTaskStatus: (id, isCompleted) =>
     api.patch(`/tasks/${id}/status`, { isCompleted }),
   deleteTask: (id) => api.delete(`/tasks/${id}`),

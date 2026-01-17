@@ -10,6 +10,7 @@ import {
   Layers,
   GripVertical,
   MessageCircle,
+  X,
 } from "lucide-react";
 import { taskAPI } from "../utils/api";
 import toast from "react-hot-toast";
@@ -27,11 +28,14 @@ const TaskCard = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(task.content);
 
   // Sync local state with prop when it changes
   useEffect(() => {
     setLocalCompleted(task.isCompleted);
-  }, [task.isCompleted]);
+    setEditedContent(task.content);
+  }, [task.isCompleted, task.content]);
 
   const handleToggle = async () => {
     if (isPartner || isUpdating) return;
@@ -52,6 +56,29 @@ const TaskCard = ({
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editedContent.trim() || editedContent === task.content) {
+      setIsEditing(false);
+      setEditedContent(task.content);
+      return;
+    }
+
+    try {
+      await taskAPI.updateTask(task._id, { content: editedContent });
+      setIsEditing(false);
+      onUpdate();
+      toast.success("Task updated!");
+    } catch {
+      toast.error("Failed to update task");
+      setEditedContent(task.content);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedContent(task.content);
   };
 
   const handleAddComment = async (e) => {
@@ -145,14 +172,54 @@ const TaskCard = ({
         )}
 
         {/* Content */}
-        <div className="flex-1 min-w-0 flex items-center gap-3">
-          <span
-            className={`text-sm font-medium truncate text-white ${
-              localCompleted ? "line-through opacity-80" : ""
-            }`}
-          >
-            {task.content}
-          </span>
+        <div className="flex-1 min-w-0 flex flex-col gap-1">
+          {isEditing ? (
+            <div className="flex items-center gap-2 w-full">
+              <input
+                type="text"
+                value={editedContent}
+                onChange={(e) => setEditedContent(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveEdit();
+                  if (e.key === "Escape") handleCancelEdit();
+                }}
+                className="flex-1 px-2 py-1 text-sm bg-white/10 border border-white/30 rounded text-white outline-none focus:border-white/50"
+                autoFocus
+              />
+              <button
+                onClick={handleSaveEdit}
+                className="p-1 bg-green-500/20 hover:bg-green-500/30 rounded text-green-300 transition-colors"
+                title="Save (Enter)"
+              >
+                <Check className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className="p-1 bg-red-500/20 hover:bg-red-500/30 rounded text-red-300 transition-colors"
+                title="Cancel (Esc)"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2 w-full">
+              <span
+                className={`text-sm font-medium text-white break-words flex-1 ${
+                  localCompleted ? "line-through opacity-80" : ""
+                }`}
+                onDoubleClick={() => !isPartner && setIsEditing(true)}
+                title="Double-click to edit"
+              >
+                {task.content}
+              </span>
+              {task.isRecurring && (
+                <div className="flex items-center gap-1 bg-white/10 px-1.5 py-0.5 rounded text-[10px] text-white/70 uppercase font-bold tracking-wide shrink-0">
+                  <span className="text-xs">🔄</span>
+                  {task.recurrence?.type}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Comment Toggle */}
@@ -331,9 +398,10 @@ const TaskPanel = ({
       {showAddTask && !isPartner && (
         <form
           onSubmit={handleAddTask}
-          className="flex flex-col md:flex-row gap-2 mb-3 animate-slide-up"
+          className="flex flex-col gap-3 mb-4 animate-slide-up bg-slate-800/80 p-3 rounded-xl border border-white/10"
         >
-          <div className="flex-1 flex gap-2">
+          {/* Input & Category Row */}
+          <div className="flex flex-col md:flex-row gap-2">
             <input
               type="text"
               value={newTask.content}
@@ -341,37 +409,125 @@ const TaskPanel = ({
                 setNewTask({ ...newTask, content: e.target.value });
                 if (onTyping) onTyping();
               }}
-              placeholder="New task..."
-              className="flex-1 px-3 py-2 text-sm rounded-lg border border-white/10 focus:border-indigo-500/50 bg-slate-900/50 text-white placeholder-slate-500 outline-none transition-all w-full"
+              placeholder="What needs to be done?"
+              className="flex-1 px-4 py-2.5 text-sm rounded-lg border border-white/10 focus:border-indigo-500/50 bg-slate-900/50 text-white placeholder-slate-500 outline-none transition-all"
               autoFocus
             />
-          </div>
-          <div className="flex gap-2">
-            <div className="relative group flex-1 md:flex-none">
-              <select
-                value={newTask.category}
-                onChange={(e) =>
-                  setNewTask({ ...newTask, category: e.target.value })
-                }
-                className="w-full md:w-10 h-10 opacity-0 absolute inset-0 cursor-pointer z-10"
-              >
-                <option value="Work">Work</option>
-                <option value="Personal">Personal</option>
-                <option value="Workout">Workout</option>
-                <option value="Study">Study</option>
-                <option value="Other">Other</option>
-              </select>
-              <div className="w-full md:w-10 h-10 flex items-center justify-center rounded-lg border border-white/10 bg-slate-900/50 hover:bg-slate-800 transition-colors pointer-events-none">
-                {getCategoryIcon(newTask.category)}
+
+            <div className="flex gap-2">
+              <div className="relative group flex-1 md:flex-none">
+                <select
+                  value={newTask.category}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, category: e.target.value })
+                  }
+                  className="w-full md:w-12 h-10 opacity-0 absolute inset-0 cursor-pointer z-10"
+                >
+                  <option value="Work">Work</option>
+                  <option value="Personal">Personal</option>
+                  <option value="Workout">Workout</option>
+                  <option value="Study">Study</option>
+                  <option value="Other">Other</option>
+                </select>
+                <div className="w-full md:w-12 h-10 flex items-center justify-center rounded-lg border border-white/10 bg-slate-900/50 hover:bg-slate-800 transition-colors pointer-events-none">
+                  {getCategoryIcon(newTask.category)}
+                </div>
               </div>
             </div>
-            <button
-              type="submit"
-              className="flex-1 md:flex-none px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors"
-            >
-              Add
-            </button>
           </div>
+
+          {/* Recurrence Options */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setNewTask((prev) => ({
+                  ...prev,
+                  isRecurring: !prev.isRecurring,
+                  recurrence: prev.isRecurring ? null : { type: "daily" },
+                }))
+              }
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                newTask.isRecurring
+                  ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/30"
+                  : "bg-slate-700/30 text-slate-400 border-transparent hover:bg-slate-700/50"
+              }`}
+            >
+              <div
+                className={`w-2 h-2 rounded-full ${newTask.isRecurring ? "bg-indigo-400 animate-pulse" : "bg-slate-600"}`}
+              />
+              Repeat
+            </button>
+
+            {newTask.isRecurring && (
+              <div className="flex flex-wrap items-center gap-2 animate-fade-in">
+                {["daily", "weekly", "custom"].map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() =>
+                      setNewTask((prev) => ({
+                        ...prev,
+                        recurrence: {
+                          ...prev.recurrence,
+                          type,
+                          daysOfWeek: type === "custom" ? [] : undefined,
+                        },
+                      }))
+                    }
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      newTask.recurrence?.type === type
+                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                        : "bg-slate-700/50 text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Custom Days Selector */}
+          {newTask.isRecurring && newTask.recurrence?.type === "custom" && (
+            <div className="flex flex-wrap gap-1 pt-1 animate-slide-down">
+              {["S", "M", "T", "W", "T", "F", "S"].map((day, idx) => {
+                const isSelected = newTask.recurrence.daysOfWeek?.includes(idx);
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      const currentDays = newTask.recurrence.daysOfWeek || [];
+                      const newDays = isSelected
+                        ? currentDays.filter((d) => d !== idx)
+                        : [...currentDays, idx].sort();
+
+                      setNewTask((prev) => ({
+                        ...prev,
+                        recurrence: { ...prev.recurrence, daysOfWeek: newDays },
+                      }));
+                    }}
+                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border ${
+                      isSelected
+                        ? "bg-indigo-500 border-indigo-400 text-white shadow-lg shadow-indigo-500/20 scale-105"
+                        : "bg-slate-800 border-slate-700 text-slate-500 hover:bg-slate-700 hover:text-slate-300"
+                    }`}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="w-full mt-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-2.5 rounded-lg text-sm font-semibold shadow-lg shadow-indigo-500/20 transition-all active:scale-[0.99]"
+          >
+            Add Task {newTask.isRecurring && "🔄"}
+          </button>
         </form>
       )}
 
