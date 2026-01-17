@@ -13,12 +13,16 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  Bell,
+  MessageCircle,
 } from "lucide-react";
 import { taskAPI, authAPI } from "../utils/api";
 import { setTasks } from "../redux/slices/taskSlice";
 import { logout, setUser } from "../redux/slices/authSlice";
 import TaskPanel from "../components/TaskPanel";
 import DateSlider from "../components/DateSlider";
+import SenderNudgeAnimation from "../components/SenderNudgeAnimation";
+import ReceiverNudgeAnimation from "../components/ReceiverNudgeAnimation";
 import toast, { Toaster } from "react-hot-toast";
 
 const Dashboard = () => {
@@ -29,11 +33,14 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [partnerEmail, setPartnerEmail] = useState("");
+  const [showNudgeMenu, setShowNudgeMenu] = useState(false);
+  const [nudgeSending, setNudgeSending] = useState(false);
+  const [nudgeData, setNudgeData] = useState(null);
   const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
+    new Date().toISOString().split("T")[0],
   );
 
-  // Sidebar state
+  // Sidebar State
   const [isPinned, setIsPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const isSidebarOpen = isPinned || isHovered;
@@ -80,13 +87,25 @@ const Dashboard = () => {
           myTasks: response.data.data.myTasks,
           partnerTasks: response.data.data.partnerTasks,
           partner: response.data.data.partner,
-        })
+        }),
       );
 
-      // Also refresh user profile to get latest XP/Streak
+      // Also refresh user profile to get latest XP/Streak and check for nudges
       const profileRes = await authAPI.getProfile();
       if (profileRes.data.success) {
-        dispatch(setUser(profileRes.data.user));
+        const userData = profileRes.data.user;
+        dispatch(setUser(userData));
+
+        // Check for unseen nudge
+        if (userData.lastNudge && !userData.lastNudge.seen) {
+          // Trigger full-screen animation
+          setNudgeData({
+            message: userData.lastNudge.message,
+            from: userData.lastNudge.from,
+          });
+          // Mark as seen
+          await authAPI.markNudgeSeen();
+        }
       }
     } catch (error) {
       console.error("Dashboard Error:", error);
@@ -142,6 +161,25 @@ const Dashboard = () => {
     }
   };
 
+  const handleSendNudge = async (msg) => {
+    setNudgeSending(true);
+    try {
+      await authAPI.sendNudge(msg);
+
+      // Show animation for sender too!
+      setNudgeData({
+        message: msg,
+        from: "You",
+      });
+
+      setShowNudgeMenu(false);
+    } catch {
+      toast.error("Failed to send nudge");
+    } finally {
+      setTimeout(() => setNudgeSending(false), 1000);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -167,6 +205,21 @@ const Dashboard = () => {
           },
         }}
       />
+
+      {/* Nudge Animations */}
+      {nudgeData && nudgeData.from === "You" && (
+        <SenderNudgeAnimation
+          message={nudgeData.message}
+          onComplete={() => setNudgeData(null)}
+        />
+      )}
+      {nudgeData && nudgeData.from !== "You" && (
+        <ReceiverNudgeAnimation
+          message={nudgeData.message}
+          from={nudgeData.from}
+          onComplete={() => setNudgeData(null)}
+        />
+      )}
 
       {/* Sidebar - Left Side */}
       <aside
@@ -460,12 +513,58 @@ const Dashboard = () => {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {partner && isPartnerViewActive && (
-                            <button
-                              onClick={handleUnlinkPartner}
-                              className="text-red-400/60 hover:text-red-400 hover:bg-red-400/10 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                            >
-                              Unlink
-                            </button>
+                            <>
+                              <div className="relative">
+                                <button
+                                  onClick={() =>
+                                    setShowNudgeMenu(!showNudgeMenu)
+                                  }
+                                  className={`text-indigo-400 hover:text-white hover:bg-indigo-500/20 p-2 rounded-lg transition-all ${
+                                    nudgeSending
+                                      ? "animate-pulse scale-110"
+                                      : ""
+                                  }`}
+                                  title="Send Nudge"
+                                  disabled={nudgeSending}
+                                >
+                                  <Bell className="w-5 h-5" />
+                                </button>
+                                {showNudgeMenu && (
+                                  <div className="absolute right-0 top-10 bg-slate-800 border border-white/10 rounded-xl shadow-xl p-2 z-50 w-48 flex flex-col gap-1">
+                                    <button
+                                      onClick={() =>
+                                        handleSendNudge("You got this! 🚀")
+                                      }
+                                      className="text-left px-3 py-2 text-sm text-white hover:bg-white/5 rounded-lg transition-colors"
+                                    >
+                                      You got this! 🚀
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleSendNudge("Wake up! ⏰")
+                                      }
+                                      className="text-left px-3 py-2 text-sm text-white hover:bg-white/5 rounded-lg transition-colors"
+                                    >
+                                      Wake up! ⏰
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleSendNudge("Great job! ⭐")
+                                      }
+                                      className="text-left px-3 py-2 text-sm text-white hover:bg-white/5 rounded-lg transition-colors"
+                                    >
+                                      Great job! ⭐
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                              <button
+                                onClick={handleUnlinkPartner}
+                                className="text-red-400/60 hover:text-red-400 hover:bg-red-400/10 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                              >
+                                Unlink
+                              </button>
+                            </>
                           )}
                           <button
                             onClick={() =>

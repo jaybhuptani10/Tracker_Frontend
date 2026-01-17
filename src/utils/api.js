@@ -33,6 +33,8 @@ export const authAPI = {
   linkPartner: (email) => api.post("/user/link-partner", { email }),
   unlinkPartner: () => api.post("/user/unlink-partner"),
   getProfile: () => api.get("/user/me"),
+  sendNudge: (message) => api.post("/user/nudge", { message }),
+  markNudgeSeen: () => api.post("/user/nudge/seen"),
 };
 
 // Task APIs
@@ -42,6 +44,7 @@ export const taskAPI = {
   updateTaskStatus: (id, isCompleted) =>
     api.patch(`/tasks/${id}/status`, { isCompleted }),
   deleteTask: (id) => api.delete(`/tasks/${id}`),
+  addComment: (id, text) => api.post(`/tasks/${id}/comment`, { text }),
 };
 
 export default api;

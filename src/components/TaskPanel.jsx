@@ -9,6 +9,7 @@ import {
   BookOpen,
   Layers,
   GripVertical,
+  MessageCircle,
 } from "lucide-react";
 import { taskAPI } from "../utils/api";
 import toast from "react-hot-toast";
@@ -18,6 +19,8 @@ const TaskCard = ({ task, onUpdate, onDelete, isPartner = false }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [localCompleted, setLocalCompleted] = useState(task.isCompleted);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState("");
 
   // Sync local state with prop when it changes
   useEffect(() => {
@@ -42,6 +45,19 @@ const TaskCard = ({ task, onUpdate, onDelete, isPartner = false }) => {
       toast.error("Failed to update task");
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+    try {
+      await taskAPI.addComment(task._id, commentText);
+      setCommentText("");
+      onUpdate();
+      toast.success("Message sent! 💬");
+    } catch {
+      toast.error("Failed to add message");
     }
   };
 
@@ -91,67 +107,125 @@ const TaskCard = ({ task, onUpdate, onDelete, isPartner = false }) => {
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`group relative flex items-center gap-3 p-3 rounded-lg border shadow-lg transition-all duration-200 hover:scale-[1.01] hover:shadow-xl ${
+      className={`group relative flex flex-col rounded-lg border shadow-lg transition-all duration-200 hover:shadow-xl ${
         config.cardBg
       } ${config.border} ${
         localCompleted ? "opacity-60 saturate-50" : "opacity-100"
       }`}
     >
-      {/* Drag Handle (Only for incomplete tasks) */}
-      {!localCompleted && !isPartner && (
-        <div className="cursor-grab active:cursor-grabbing text-white/50 hover:text-white/80">
-          <GripVertical className="w-4 h-4" />
+      <div className="flex items-center gap-3 p-3">
+        {/* Drag Handle (Only for incomplete tasks) */}
+        {!localCompleted && !isPartner && (
+          <div className="cursor-grab active:cursor-grabbing text-white/50 hover:text-white/80">
+            <GripVertical className="w-4 h-4" />
+          </div>
+        )}
+
+        {/* Checkbox */}
+        {!isPartner && (
+          <button
+            onClick={handleToggle}
+            disabled={isUpdating}
+            className={`flex-shrink-0 w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center shadow-sm ${
+              localCompleted
+                ? "bg-white border-transparent"
+                : `bg-transparent ${config.checkbox}`
+            }`}
+          >
+            {localCompleted && (
+              <Check className="w-3.5 h-3.5 text-slate-900 font-bold" />
+            )}
+          </button>
+        )}
+
+        {/* Content */}
+        <div className="flex-1 min-w-0 flex items-center gap-3">
+          <span
+            className={`text-sm font-medium truncate text-white ${
+              localCompleted ? "line-through opacity-80" : ""
+            }`}
+          >
+            {task.content}
+          </span>
         </div>
-      )}
 
-      {/* Checkbox */}
-      {!isPartner && (
+        {/* Comment Toggle */}
         <button
-          onClick={handleToggle}
-          disabled={isUpdating}
-          className={`flex-shrink-0 w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center shadow-sm ${
-            localCompleted
-              ? "bg-white border-transparent"
-              : `bg-transparent ${config.checkbox}`
+          onClick={() => setShowComments(!showComments)}
+          className={`p-1.5 rounded-md hover:bg-white/20 transition-all ${
+            task.comments?.length > 0 ? "text-white" : "text-white/70"
           }`}
+          title="Comments"
         >
-          {localCompleted && (
-            <Check className="w-3.5 h-3.5 text-slate-900 font-bold" />
-          )}
+          <div className="relative">
+            <MessageCircle className="w-3.5 h-3.5" />
+            {task.comments?.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold px-1 rounded-full">
+                {task.comments.length}
+              </span>
+            )}
+          </div>
         </button>
-      )}
 
-      {/* Content */}
-      <div className="flex-1 min-w-0 flex items-center gap-3">
-        <span
-          className={`text-sm font-medium truncate text-white ${
-            localCompleted ? "line-through opacity-80" : ""
-          }`}
+        {/* Category Icon */}
+        <div
+          className={`p-1.5 rounded-md ${config.iconBg} backdrop-blur-sm`}
+          title={task.category}
         >
-          {task.content}
-        </span>
+          <Icon className="w-3.5 h-3.5" />
+        </div>
+
+        {/* Delete Button */}
+        {!isPartner && (
+          <button
+            onClick={() => onDelete(task._id)}
+            className={`p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/20 transition-all duration-200 ${
+              isHovered
+                ? "opacity-100"
+                : "opacity-100 md:opacity-0 md:group-hover:opacity-100"
+            }`}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
-      {/* Category Icon */}
-      <div
-        className={`p-1.5 rounded-md ${config.iconBg} backdrop-blur-sm`}
-        title={task.category}
-      >
-        <Icon className="w-3.5 h-3.5" />
-      </div>
-
-      {/* Delete Button */}
-      {!isPartner && (
-        <button
-          onClick={() => onDelete(task._id)}
-          className={`p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/20 transition-all duration-200 ${
-            isHovered
-              ? "opacity-100"
-              : "opacity-100 md:opacity-0 md:group-hover:opacity-100"
-          }`}
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+      {/* Comment Section */}
+      {showComments && (
+        <div className="p-3 border-t border-white/10 bg-black/20 rounded-b-lg animate-slide-up">
+          <div className="space-y-2 mb-3 max-h-32 overflow-y-auto scrollbar-hide">
+            {task.comments?.length === 0 ? (
+              <p className="text-xs text-white/50 text-center italic">
+                No notes yet
+              </p>
+            ) : (
+              task.comments?.map((comment, index) => (
+                <div
+                  key={index}
+                  className="bg-white/10 rounded-lg p-2 text-xs text-white"
+                >
+                  <p>{comment.text}</p>
+                </div>
+              ))
+            )}
+          </div>
+          <form onSubmit={handleAddComment} className="flex gap-2">
+            <input
+              type="text"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder="Type a note..."
+              className="flex-1 px-2 py-1.5 rounded bg-white/10 border border-white/10 text-xs text-white placeholder-white/50 focus:border-white/30 outline-none"
+            />
+            <button
+              type="submit"
+              disabled={!commentText.trim()}
+              className="px-2 py-1.5 bg-white/20 hover:bg-white/30 rounded text-white disabled:opacity-50 transition-colors"
+            >
+              <Plus className="w-3 h-3" />
+            </button>
+          </form>
+        </div>
       )}
     </div>
   );
