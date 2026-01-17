@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
@@ -24,6 +24,7 @@ import DateSlider from "../components/DateSlider";
 import SenderNudgeAnimation from "../components/SenderNudgeAnimation";
 import ReceiverNudgeAnimation from "../components/ReceiverNudgeAnimation";
 import toast, { Toaster } from "react-hot-toast";
+import { initSocket, disconnectSocket, getSocket } from "../utils/socket";
 
 const Dashboard = () => {
   const dispatch = useDispatch();
@@ -40,6 +41,10 @@ const Dashboard = () => {
     new Date().toISOString().split("T")[0],
   );
 
+  // Real-time Presence State
+  const [isPartnerOnline, setIsPartnerOnline] = useState(false);
+  const [isPartnerTyping, setIsPartnerTyping] = useState(false);
+
   // Sidebar State
   const [isPinned, setIsPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -47,6 +52,44 @@ const Dashboard = () => {
 
   // Partner View State
   const [isPartnerViewActive, setIsPartnerViewActive] = useState(true);
+
+  const handleNudgeComplete = useCallback(() => {
+    setNudgeData(null);
+  }, []);
+
+  // Socket Connection Effect
+  useEffect(() => {
+    if (user && user._id) {
+      const socket = initSocket(user._id, user.partnerId);
+
+      socket.on("user_online", () => setIsPartnerOnline(true));
+      socket.on("user_offline", () => setIsPartnerOnline(false));
+      socket.on("partner_typing", () => setIsPartnerTyping(true));
+      socket.on("partner_stop_typing", () => setIsPartnerTyping(false));
+
+      return () => {
+        socket.off("user_online");
+        socket.off("user_offline");
+        socket.off("partner_typing");
+        socket.off("partner_stop_typing");
+        disconnectSocket();
+      };
+    }
+  }, [user]);
+
+  // Handle Typing - Passed to TaskPanel
+  const handleTyping = () => {
+    const socket = getSocket();
+    if (socket && user?.partnerId) {
+      socket.emit("typing", { recipientId: user.partnerId });
+
+      // Debounce stop typing
+      if (window.typingTimeout) clearTimeout(window.typingTimeout);
+      window.typingTimeout = setTimeout(() => {
+        socket.emit("stop_typing", { recipientId: user.partnerId });
+      }, 1000);
+    }
+  };
 
   // Effect 1: Fetch User Profile ONCE on mount if missing
   useEffect(() => {
@@ -210,14 +253,14 @@ const Dashboard = () => {
       {nudgeData && nudgeData.from === "You" && (
         <SenderNudgeAnimation
           message={nudgeData.message}
-          onComplete={() => setNudgeData(null)}
+          onComplete={handleNudgeComplete}
         />
       )}
       {nudgeData && nudgeData.from !== "You" && (
         <ReceiverNudgeAnimation
           message={nudgeData.message}
           from={nudgeData.from}
-          onComplete={() => setNudgeData(null)}
+          onComplete={handleNudgeComplete}
         />
       )}
 
@@ -475,6 +518,7 @@ const Dashboard = () => {
                         onDelete={handleDeleteTask}
                         isPartner={false}
                         selectedDate={selectedDate}
+                        onTyping={handleTyping}
                       />
                     </div>
                   </div>
@@ -501,13 +545,25 @@ const Dashboard = () => {
                                 : "opacity-100"
                             }`}
                           >
-                            <h3 className="text-lg font-bold text-white truncate">
+                            <h3 className="text-lg font-bold text-white truncate flex items-center gap-2">
                               {partner
                                 ? `${partner.name}'s Tasks`
                                 : "Partner's Tasks"}
+                              {isPartnerOnline && (
+                                <span
+                                  className="w-2 h-2 rounded-full bg-green-500 animate-pulse"
+                                  title="Online"
+                                />
+                              )}
                             </h3>
-                            <p className="text-xs text-slate-400 truncate">
-                              Partner's progress
+                            <p className="text-xs text-slate-400 truncate h-4">
+                              {isPartnerTyping ? (
+                                <span className="text-indigo-400 animate-pulse font-medium">
+                                  typing...
+                                </span>
+                              ) : (
+                                "Partner's progress"
+                              )}
                             </p>
                           </div>
                         </div>

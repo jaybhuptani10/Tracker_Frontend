@@ -10,7 +10,7 @@ const ReceiverNudgeAnimation = ({ message, from, onComplete }) => {
       setTimeout(onComplete, 500);
     }, 3500);
     return () => clearTimeout(timer);
-  }, [onComplete]);
+  }, []); // Run once on mount
 
   return (
     <AnimatePresence>

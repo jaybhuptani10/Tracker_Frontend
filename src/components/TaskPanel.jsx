@@ -15,7 +15,13 @@ import { taskAPI } from "../utils/api";
 import toast from "react-hot-toast";
 import { Reorder } from "framer-motion";
 
-const TaskCard = ({ task, onUpdate, onDelete, isPartner = false }) => {
+const TaskCard = ({
+  task,
+  onUpdate,
+  onDelete,
+  isPartner = false,
+  onTyping,
+}) => {
   const [isHovered, setIsHovered] = useState(false);
   const [localCompleted, setLocalCompleted] = useState(task.isCompleted);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -213,7 +219,10 @@ const TaskCard = ({ task, onUpdate, onDelete, isPartner = false }) => {
             <input
               type="text"
               value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
+              onChange={(e) => {
+                setCommentText(e.target.value);
+                if (onTyping) onTyping();
+              }}
               placeholder="Type a note..."
               className="flex-1 px-2 py-1.5 rounded bg-white/10 border border-white/10 text-xs text-white placeholder-white/50 focus:border-white/30 outline-none"
             />
@@ -238,6 +247,7 @@ const TaskPanel = ({
   onDelete,
   isPartner,
   selectedDate,
+  onTyping,
 }) => {
   const [showAddTask, setShowAddTask] = useState(false);
   const [newTask, setNewTask] = useState({ content: "", category: "Other" });
@@ -327,9 +337,10 @@ const TaskPanel = ({
             <input
               type="text"
               value={newTask.content}
-              onChange={(e) =>
-                setNewTask({ ...newTask, content: e.target.value })
-              }
+              onChange={(e) => {
+                setNewTask({ ...newTask, content: e.target.value });
+                if (onTyping) onTyping();
+              }}
               placeholder="New task..."
               className="flex-1 px-3 py-2 text-sm rounded-lg border border-white/10 focus:border-indigo-500/50 bg-slate-900/50 text-white placeholder-slate-500 outline-none transition-all w-full"
               autoFocus
@@ -391,6 +402,7 @@ const TaskPanel = ({
                       onUpdate={onUpdate}
                       onDelete={onDelete}
                       isPartner={isPartner}
+                      onTyping={onTyping}
                     />
                   </Reorder.Item>
                 ))}
@@ -416,6 +428,7 @@ const TaskPanel = ({
                       onUpdate={onUpdate}
                       onDelete={onDelete}
                       isPartner={isPartner}
+                      onTyping={onTyping}
                     />
                   ))}
                 </div>
